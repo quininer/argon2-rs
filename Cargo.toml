@@ -1,0 +1,12 @@
+[package]
+name = "argon2"
+version = "0.1.0"
+authors = ["quininer <quininer@live.com>"]
+build = "build.rs"
+
+[dependencies]
+libc = "*"
+
+[build-dependencies.ffigen]
+path = "../rust-ffigen"
+# git = "https://github.com/quininer/rust-ffigen.git"
