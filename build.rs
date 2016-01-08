@@ -7,6 +7,7 @@ use ffigen::GenOptions;
 const CLANG_INCLUDE_PATH: &'static str = "/usr/lib/clang/3.7.0/include/";
 const INCLUDE_PATH: &'static str = "/usr/include/";
 
+
 fn main() {
     let data = GenOptions::new()
         .arg(&format!("-I{}", CLANG_INCLUDE_PATH))
