@@ -2,8 +2,8 @@ extern crate libc;
 
 mod ffi;
 
-use std::ffi::CString;
-use std::mem::transmute;
+use std::ffi::{ CString, CStr };
+use std::mem::{ transmute, transmute_copy };
 pub use ffi::{
     argon2_type as Type,
     argon2_error_codes as ErrorCode
@@ -15,9 +15,9 @@ const SALT_LEN: usize = 16;
 const ENCODE_LEN: usize = 108;
 
 pub struct Argon2 {
-    t_const: usize,
-    m_const: usize,
-    parallelism: usize,
+    t_const: u32,
+    m_const: u32,
+    parallelism: u32,
     salt: Vec<u8>,
     ty: Type,
     out_len: usize,
@@ -26,7 +26,7 @@ pub struct Argon2 {
 }
 
 impl Argon2 {
-    pub fn new(salt: &[u8], t_const: usize, m_const: usize) -> Argon2 {
+    pub fn new(salt: &[u8], t_const: u32, m_const: u32) -> Argon2 {
         Argon2 {
             t_const: t_const,
             m_const: m_const,
@@ -39,7 +39,7 @@ impl Argon2 {
         }
     }
 
-    pub fn set_threads(mut self, parallelism: usize) -> Argon2 {
+    pub fn set_threads(mut self, parallelism: u32) -> Argon2 {
         self.parallelism = parallelism;
         self
     }
@@ -70,12 +70,12 @@ impl Argon2 {
             encoded.set_len(self.encoded_len);
 
             match transmute(ffi::argon2_hash(
-                self.t_const as libc::uint32_t,
-                self.m_const as libc::uint32_t,
-                self.parallelism as libc::uint32_t,
-                transmute(pwd.to_vec().as_ptr()),
+                self.t_const,
+                self.m_const,
+                self.parallelism,
+                transmute_copy(&pwd),
                 pwd.len(),
-                transmute(CString::from_vec_unchecked(self.salt.to_vec()).as_ptr()),
+                transmute_copy(&CString::from_vec_unchecked(self.salt.to_vec())),
                 self.salt_len,
                 transmute(out.as_mut_ptr()),
                 out.len(),
@@ -85,7 +85,7 @@ impl Argon2 {
             )) {
                 ErrorCode::ARGON2_OK => Ok((
                     out,
-                    CString::from_raw(encoded.as_mut_ptr())
+                    CStr::from_ptr(encoded.as_ptr())
                         .to_str().map(|r| r.into()).unwrap()
                 )),
                 err @ _ => Err(err)
@@ -98,17 +98,18 @@ impl Argon2 {
     /// ```
     /// use argon2::Argon2;
     ///
-    /// let a2 = Argon2::new("somesalt".as_bytes(), 16, 8);
+    /// let a2 = Argon2::new("somesalt".as_bytes(), 2, 65536);
     /// let hash = a2.hash("password".as_bytes()).unwrap();
     ///
     /// println!("{:?}", a2.verify(&hash.0, &hash.1).err());
-    /// assert!(false);
+    /// assert!(a2.verify(&hash.0, &hash.1).is_ok());
     /// ```
     pub fn verify(&self, pwd: &[u8], encoded: &str) -> Result<bool, ErrorCode> {
         unsafe {
+            // FIXME decode fail
             match transmute(ffi::argon2_verify(
                 CString::from_vec_unchecked(encoded.bytes().collect()).as_ptr(),
-                transmute(pwd.as_ptr()),
+                transmute_copy(&pwd),
                 pwd.len(),
                 self.ty
             )) {
