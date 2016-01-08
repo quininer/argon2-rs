@@ -7,4 +7,4 @@ Dependencies
 ------------
 
 + Argon2
-	Arch users can install from the [AUR](https://aur.archlinux.org/packages/argon2-git/).
+	* Arch user can install from [AUR](https://aur.archlinux.org/packages/argon2-git/).

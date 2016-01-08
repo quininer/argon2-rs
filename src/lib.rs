@@ -2,6 +2,7 @@ extern crate libc;
 
 mod ffi;
 
+use std::fmt;
 use std::ffi::{ CString, CStr };
 use std::mem::{ transmute, transmute_copy };
 pub use ffi::{
@@ -101,12 +102,10 @@ impl Argon2 {
     /// let a2 = Argon2::new("somesalt".as_bytes(), 2, 65536);
     /// let hash = a2.hash("password".as_bytes()).unwrap();
     ///
-    /// println!("{:?}", a2.verify(&hash.0, &hash.1).err());
-    /// assert!(a2.verify(&hash.0, &hash.1).is_ok());
+    /// assert!(a2.verify("password".as_bytes(), &hash.1).is_ok());
     /// ```
     pub fn verify(&self, pwd: &[u8], encoded: &str) -> Result<bool, ErrorCode> {
         unsafe {
-            // FIXME decode fail
             match transmute(ffi::argon2_verify(
                 CString::from_vec_unchecked(encoded.bytes().collect()).as_ptr(),
                 transmute_copy(&pwd),
@@ -117,5 +116,18 @@ impl Argon2 {
                 err @ _ => Err(err)
             }
         }
+    }
+}
+
+pub fn error_message(err: ErrorCode) -> Option<String> {
+    unsafe {
+        CStr::from_ptr(ffi::error_message(err as libc::c_int))
+            .to_str().map(|r| r.into()).ok()
+    }
+}
+
+impl fmt::Display for ErrorCode {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{}", error_message(self.clone()).unwrap_or(String::from("Unknown")))
     }
 }
