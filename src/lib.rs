@@ -34,7 +34,7 @@ impl Argon2 {
             m_const: m_const,
             parallelism: 1,
             pwd: pwd.to_vec(),
-            ty: Type::Argon2_i,
+            ty: Type::i,
             out_len: OUT_LEN,
             salt_len: SALT_LEN,
             encoded_len: ENCODE_LEN
@@ -84,7 +84,7 @@ impl Argon2 {
                 encoded.len(),
                 self.ty
             )) {
-                ErrorCode::ARGON2_OK => Ok((
+                ErrorCode::OK => Ok((
                     out,
                     CStr::from_ptr(encoded.as_ptr())
                         .to_str().map(|r| r.into()).unwrap()
@@ -112,7 +112,7 @@ impl Argon2 {
                 self.pwd.len(),
                 self.ty
             )) {
-                ErrorCode::ARGON2_OK => Ok(true),
+                ErrorCode::OK => Ok(true),
                 err @ _ => Err(err)
             }
         }
