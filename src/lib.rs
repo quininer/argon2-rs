@@ -17,9 +17,9 @@ const ENCODE_LEN: usize = 108;
 
 #[derive(Clone, Debug)]
 pub struct Argon2 {
-    t_const: u32,
-    m_const: u32,
-    parallelism: u32,
+    t_const: usize,
+    m_const: usize,
+    parallelism: usize,
     pwd: Vec<u8>,
     ty: Type,
     out_len: usize,
@@ -28,7 +28,7 @@ pub struct Argon2 {
 }
 
 impl Argon2 {
-    pub fn new(pwd: &[u8], t_const: u32, m_const: u32) -> Argon2 {
+    pub fn new(pwd: &[u8], t_const: usize, m_const: usize) -> Argon2 {
         Argon2 {
             t_const: t_const,
             m_const: m_const,
@@ -41,7 +41,7 @@ impl Argon2 {
         }
     }
 
-    pub fn set_threads(mut self, parallelism: u32) -> Argon2 {
+    pub fn set_threads(mut self, parallelism: usize) -> Argon2 {
         self.parallelism = parallelism;
         self
     }
@@ -56,10 +56,10 @@ impl Argon2 {
     /// use argon2::Argon2;
     ///
     /// let a2 = Argon2::new("password".as_bytes(), 2, 65536);
-    /// let hash = a2.hash("somesalt".as_bytes()).unwrap();
+    /// let (_, hash) = a2.hash("somesalt".as_bytes()).unwrap();
     ///
     /// assert_eq!(
-    ///     hash.1,
+    ///     hash,
     ///     "$argon2i$m=65536,t=2,p=1$c29tZXNhbHQAAAAAAAAAAA$iUr0/y4tJvPOFfd6fhwl20W04gQ56ZYXcroZnK3bAB4"
     /// );
     /// ```
@@ -71,9 +71,9 @@ impl Argon2 {
             encoded.set_len(self.encoded_len);
 
             match transmute(ffi::argon2_hash(
-                self.t_const,
-                self.m_const,
-                self.parallelism,
+                self.t_const as libc::uint32_t,
+                self.m_const as libc::uint32_t,
+                self.parallelism as libc::uint32_t,
                 transmute_copy(&self.pwd),
                 self.pwd.len(),
                 transmute_copy(&CString::from_vec_unchecked(salt.to_vec())),
@@ -100,9 +100,9 @@ impl Argon2 {
     /// use argon2::Argon2;
     ///
     /// let a2 = Argon2::new("password".as_bytes(), 2, 65536);
-    /// let hash = a2.hash("somesalt".as_bytes()).unwrap();
+    /// let (_, hash) = a2.hash("somesalt".as_bytes()).unwrap();
     ///
-    /// assert!(a2.verify(&hash.1).is_ok());
+    /// assert!(a2.verify(&hash).is_ok());
     /// ```
     pub fn verify(&self, encoded: &str) -> Result<bool, ErrorCode> {
         unsafe {
