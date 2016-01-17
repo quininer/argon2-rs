@@ -1,7 +1,7 @@
 argon2-rs
 =========
 
-Rust binding for [Argon2](https://github.com/P-H-C/phc-winner-argon2).
+Rust bindings for [Argon2](https://github.com/P-H-C/phc-winner-argon2).
 
 Requirements
 ------------
@@ -9,7 +9,7 @@ Requirements
 + Argon2
 	* Arch user can install from [AUR](https://aur.archlinux.org/packages/argon2-git/).
 + Clang
-	* Generate ffi.rs.
+	* Generate `ffi.rs`.
 
 Build
 -----

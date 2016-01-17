@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::Write;
 use ffigen::GenOptions;
 
-const CLANG_INCLUDE_PATH: &'static str = "/usr/lib/clang/3.7.0/include/";
+const CLANG_INCLUDE_PATH: &'static str = "/usr/lib/clang/3.7.1/include/";
 const INCLUDE_PATH: &'static str = "/usr/include/";
 
 
