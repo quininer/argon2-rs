@@ -121,7 +121,7 @@ impl Argon2 {
 
 fn error_message(err: ErrorCode) -> Option<String> {
     unsafe {
-        CStr::from_ptr(ffi::error_message(err as libc::c_int))
+        CStr::from_ptr(ffi::argon2_error_message(err as libc::c_int))
             .to_str().map(|r| r.into()).ok()
     }
 }
