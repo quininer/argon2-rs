@@ -7,6 +7,10 @@ build = "build.rs"
 [dependencies]
 libc = "0.2.*"
 
+[dependencies.secstr]
+path = "../../.source/secstr"
+features = []
+
 [build-dependencies.ffigen]
 version = "0.1.*"
 git = "https://github.com/quininer/rust-ffigen.git"
