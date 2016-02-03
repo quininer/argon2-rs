@@ -1,16 +1,19 @@
+#![feature(stmt_expr_attributes)]
+
 extern crate libc;
-extern crate secstr;
+#[cfg(feature = "secstr")] extern crate secstr;
 
 mod ffi;
 
 use std::fmt;
 use std::ffi::{ CString, CStr };
+use std::borrow::Borrow;
 use std::mem::{ transmute, transmute_copy };
-use secstr::SecStr;
-pub use ffi::{
-    argon2_type as Type,
-    argon2_error_codes as ErrorCode
-};
+
+#[cfg(feature = "secstr")] use secstr::SecStr;
+
+pub use ffi::argon2_type as Type;
+pub use ffi::argon2_error_codes as ErrorCode;
 
 const OUT_LEN: usize = 32;
 const SALT_LEN: usize = 16;
@@ -22,7 +25,13 @@ pub struct Argon2 {
     t_const: usize,
     m_const: usize,
     parallelism: usize,
+
+    #[cfg(feature = "secstr")]
     pwd: SecStr,
+
+    #[cfg(not(feature = "secstr"))]
+    pwd: Vec<u8>,
+
     ty: Type,
     out_len: usize,
     salt_len: usize,
@@ -30,7 +39,7 @@ pub struct Argon2 {
 }
 
 impl Argon2 {
-    pub fn new(pwd: &[u8], t_const: usize, m_const: usize) -> Argon2 {
+    pub fn new<P: Into<Vec<u8>>>(pwd: P, t_const: usize, m_const: usize) -> Argon2 {
         Argon2 {
             t_const: t_const,
             m_const: m_const,
@@ -57,7 +66,7 @@ impl Argon2 {
     /// ```
     /// use argon2::Argon2;
     ///
-    /// let a2 = Argon2::new("password".as_bytes(), 2, 65536);
+    /// let a2 = Argon2::new("password", 2, 65536);
     /// let (_, hash) = a2.hash("somesalt".as_bytes()).unwrap();
     ///
     /// assert_eq!(
@@ -65,13 +74,18 @@ impl Argon2 {
     ///     "$argon2i$m=65536,t=2,p=1$c29tZXNhbHQAAAAAAAAAAA$iUr0/y4tJvPOFfd6fhwl20W04gQ56ZYXcroZnK3bAB4"
     /// );
     /// ```
-    pub fn hash(&self, salt: &[u8]) -> Result<(Vec<u8>, String), ErrorCode> {
+    pub fn hash<B: Borrow<[u8]>>(&self, salt: B) -> Result<(Vec<u8>, String), ErrorCode> {
         unsafe {
             let mut out = Vec::with_capacity(self.out_len);
             out.set_len(self.out_len);
             let mut encoded = Vec::with_capacity(self.encoded_len);
             encoded.set_len(self.encoded_len);
+
+            #[cfg(feature = "secstr")]
             let raw_pwd = self.pwd.unsecure();
+
+            #[cfg(not(feature = "secstr"))]
+            let raw_pwd = self.pwd.clone();
 
             match transmute(ffi::argon2_hash(
                 self.t_const as libc::uint32_t,
@@ -79,7 +93,7 @@ impl Argon2 {
                 self.parallelism as libc::uint32_t,
                 transmute_copy(&raw_pwd),
                 raw_pwd.len(),
-                transmute_copy(&CString::from_vec_unchecked(salt.into())),
+                transmute_copy(&CString::from_vec_unchecked(salt.borrow().into())),
                 self.salt_len,
                 transmute(out.as_mut_ptr()),
                 out.len(),
@@ -102,13 +116,18 @@ impl Argon2 {
     /// ```
     /// use argon2::Argon2;
     ///
-    /// let a2 = Argon2::new("password".as_bytes(), 2, 65536);
+    /// let a2 = Argon2::new("password", 2, 65536);
     /// let (_, hash) = a2.hash("somesalt".as_bytes()).unwrap();
     ///
     /// assert!(a2.verify(&hash).is_ok());
     /// ```
     pub fn verify(&self, encoded: &str) -> Result<bool, ErrorCode> {
+        #[cfg(feature = "secstr")]
         let raw_pwd = self.pwd.unsecure();
+
+        #[cfg(not(feature = "secstr"))]
+        let raw_pwd = self.pwd.clone();
+
         unsafe {
             match transmute(ffi::argon2_verify(
                 CString::from_vec_unchecked(encoded.bytes().collect()).as_ptr(),
@@ -132,6 +151,6 @@ fn error_message(err: ErrorCode) -> Option<String> {
 
 impl fmt::Display for ErrorCode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", error_message(self.clone()).unwrap_or(String::from("Unknown")))
+        write!(f, "{}", error_message(*self).unwrap_or(String::from("Unknown")))
     }
 }

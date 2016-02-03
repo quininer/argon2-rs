@@ -1,16 +1,16 @@
 [package]
 name = "argon2"
-version = "0.1.0"
+version = "0.1.2"
 authors = ["quininer <quininer@live.com>"]
 build = "build.rs"
 
 [dependencies]
-libc = "0.2.*"
-
-[dependencies.secstr]
-path = "../../.source/secstr"
-features = []
+libc = "0.2"
+secstr = { version = "0.2", features = [ "libsodium-sys" ], optional = true }
 
 [build-dependencies.ffigen]
 version = "0.1.*"
 git = "https://github.com/quininer/rust-ffigen.git"
+
+[features]
+default = [ "secstr" ]
