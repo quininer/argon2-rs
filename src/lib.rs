@@ -40,11 +40,18 @@ pub struct Argon2 {
 
 impl Argon2 {
     pub fn new<P: Into<Vec<u8>>>(pwd: P, t_const: usize, m_const: usize) -> Argon2 {
+
+        #[cfg(feature = "secstr")]
+        let pwd = SecStr::from(pwd);
+
+        #[cfg(not(feature = "secstr"))]
+        let pwd = pwd.into();
+
         Argon2 {
             t_const: t_const,
             m_const: m_const,
             parallelism: 1,
-            pwd: pwd.into(),
+            pwd: pwd,
             ty: Type::i,
             out_len: OUT_LEN,
             salt_len: SALT_LEN,
