@@ -67,18 +67,22 @@ impl Argon2 {
         self.ty = ty;
         self
     }
+    pub fn set_len(mut self, len: usize) -> Argon2 {
+        self.out_len = len;
+        self
+    }
 
     /// # Example
     ///
     /// ```
     /// use argon2::Argon2;
     ///
-    /// let a2 = Argon2::new("password", 2, 65536);
+    /// let a2 = Argon2::new("password", 2, 65536).set_threads(4);
     /// let (_, hash) = a2.hash("somesalt".as_bytes()).unwrap();
     ///
     /// assert_eq!(
     ///     hash,
-    ///     "$argon2i$m=65536,t=2,p=1$c29tZXNhbHQAAAAAAAAAAA$iUr0/y4tJvPOFfd6fhwl20W04gQ56ZYXcroZnK3bAB4"
+    ///     "$argon2i$m=65536,t=2,p=4$c29tZXNhbHQAAAAAAAAAAA$K6Lm0QepnXT7WT6YsAcR97jqqKSxQp/+/4eFoB41bXw"
     /// );
     /// ```
     pub fn hash<B: Borrow<[u8]>>(&self, salt: B) -> Result<(Vec<u8>, String), ErrorCode> {
