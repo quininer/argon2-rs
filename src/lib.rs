@@ -117,7 +117,7 @@ impl Argon2 {
                     CStr::from_ptr(encoded.as_ptr())
                         .to_str().map(|r| r.into()).unwrap()
                 )),
-                err @ _ => Err(err)
+                err => Err(err)
             }
         }
     }
@@ -147,7 +147,7 @@ impl Argon2 {
                 self.ty
             )) {
                 ErrorCode::OK => Ok(true),
-                err @ _ => Err(err)
+                err => Err(err)
             }
         }
     }
