@@ -1,6 +1,6 @@
 [package]
 name = "argon2"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["quininer <quininer@live.com>"]
 build = "build.rs"
 

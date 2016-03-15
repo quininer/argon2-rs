@@ -110,7 +110,8 @@ impl Argon2 {
 ///
 /// assert!(verify(&hash, "password").is_ok());
 /// ```
-pub fn verify<S: AsRef<[u8]>>(encoded: &str, pwd: S) -> Result<bool, ErrorCode> {
+pub fn verify<E: AsRef<str>, S: AsRef<[u8]>>(encoded: E, pwd: S) -> Result<bool, ErrorCode> {
+    let encoded = encoded.as_ref();
     let pwd = pwd.as_ref();
 
     unsafe {
