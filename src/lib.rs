@@ -8,6 +8,8 @@ use std::mem::{ transmute, transmute_copy };
 
 pub use ffi::argon2_type as Type;
 pub use ffi::argon2_error_codes as ErrorCode;
+pub use ffi::argon2_version as Version;
+pub use ffi::argon2_version_number as VersionNumber;
 
 const OUT_LEN: usize = 32;
 const SALT_LEN: usize = 16;
@@ -63,7 +65,7 @@ impl Argon2 {
     ///
     /// assert_eq!(
     ///     hash,
-    ///     "$argon2i$m=65536,t=2,p=4$c29tZXNhbHQAAAAAAAAAAA$K6Lm0QepnXT7WT6YsAcR97jqqKSxQp/+/4eFoB41bXw"
+    ///     "$argon2i$v=19$m=65536,t=2,p=4$c29tZXNhbHQAAAAAAAAAAA$K6Lm0QepnXT7WT6YsAcR97jqqKSxQp/+/4eFoB41bXw"
     /// );
     /// ```
     pub fn hash<S: AsRef<[u8]>>(&self, pwd: S) -> Result<(Vec<u8>, String), ErrorCode> {
@@ -87,7 +89,8 @@ impl Argon2 {
                 out.len(),
                 encoded.as_mut_ptr(),
                 encoded.len(),
-                self.ty
+                self.ty,
+                VersionNumber as u32
             )) {
                 ErrorCode::OK => Ok((
                     out,
