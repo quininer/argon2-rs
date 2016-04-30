@@ -1,30 +1,35 @@
-#[macro_use] extern crate ffigen;
+#![feature(rustc_private)]
+
+extern crate syntax;
+extern crate crustacean;
 
 use std::fs::File;
 use std::io::Write;
+use syntax::print::pprust;
+use crustacean::Generator;
+
 
 fn main() {
-    // FIXME HACK
-    let out = gen!("argon2", [ "argon2.h" ]);
-    let out = String::from_utf8_lossy(&out);
-    let out = out.replace("
-#[repr(C)]
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum argon2_version {
-    _10 = 16,
-    _13 = 19,
-    NUMBER = 19,
-}
-",
-    "
-#[repr(C)]
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub enum argon2_version {
-    _10 = 16,
-    _13 = 19,
-}
-pub const argon2_version_number: argon2_version = argon2_version::_13;
-");
-    File::create("src/ffi.rs").unwrap()
-        .write(out.as_bytes()).unwrap();
+    let mut buff = Vec::new();
+    let mut fs = File::create("src/ffi.rs").unwrap();
+
+    for item in Generator::new()
+        .header("/usr/include/argon2.h", &["-I/usr/lib/clang/3.7.1/include/"])
+        .generate()
+        .unwrap()
+        .items
+    {
+        write!(buff, "{}\n", pprust::item_to_string(&item)).unwrap();
+    }
+
+    fs.write(
+        String::from_utf8_lossy(&buff)
+            .replace("\n    ARGON2_VERSION_NUMBER = 19,", "")
+            .replace("\
+extern \"C\" {\n", "\
+#[link(name = \"argon2\")]
+extern \"C\" {\n"
+            )
+            .as_bytes()
+    ).unwrap();
 }

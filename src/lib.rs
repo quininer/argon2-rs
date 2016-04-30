@@ -1,15 +1,17 @@
 extern crate libc;
 
+#[allow(non_camel_case_types)]
+#[allow(dead_code)]
 mod ffi;
 
 use std::fmt;
 use std::ffi::{ CString, CStr };
 use std::mem::{ transmute, transmute_copy };
 
-pub use ffi::argon2_type as Type;
-pub use ffi::argon2_error_codes as ErrorCode;
-pub use ffi::argon2_version as Version;
-pub use ffi::argon2_version_number as VersionNumber;
+pub use ffi::Argon2_type as Type;
+pub use ffi::Argon2_ErrorCodes as ErrorCode;
+pub use ffi::Argon2_version as Version;
+pub use ffi::Argon2_version::ARGON2_VERSION_13 as VersionNumber;
 
 const OUT_LEN: usize = 32;
 const SALT_LEN: usize = 16;
@@ -35,7 +37,7 @@ impl Argon2 {
             m_const: m_const,
             parallelism: 1,
             salt: salt.as_ref().into(),
-            ty: Type::i,
+            ty: Type::Argon2_i,
             out_len: OUT_LEN,
             salt_len: SALT_LEN,
             encoded_len: ENCODE_LEN
@@ -82,17 +84,17 @@ impl Argon2 {
                 self.m_const as libc::uint32_t,
                 self.parallelism as libc::uint32_t,
                 transmute_copy(&pwd),
-                pwd.len(),
+                pwd.len() as u64,
                 transmute_copy(&CString::from_vec_unchecked(self.clone().salt)),
-                self.salt_len,
+                self.salt_len as u64,
                 transmute(out.as_mut_ptr()),
-                out.len(),
+                out.len() as u64,
                 encoded.as_mut_ptr(),
-                encoded.len(),
+                encoded.len() as u64,
                 self.ty,
                 VersionNumber as u32
             )) {
-                ErrorCode::OK => Ok((
+                ErrorCode::ARGON2_OK => Ok((
                     out,
                     CStr::from_ptr(encoded.as_ptr())
                         .to_str().map(|r| r.into()).unwrap()
@@ -121,10 +123,10 @@ pub fn verify<E: AsRef<str>, S: AsRef<[u8]>>(encoded: E, pwd: S) -> Result<bool,
         match transmute(ffi::argon2_verify(
             CString::from_vec_unchecked(encoded.bytes().collect()).as_ptr(),
             transmute_copy(&pwd),
-            pwd.len(),
-            if encoded.starts_with("$argon2i$") { Type::i } else { Type::d }
+            pwd.len() as u64,
+            if encoded.starts_with("$argon2i$") { Type::Argon2_i } else { Type::Argon2_d }
         )) {
-            ErrorCode::OK => Ok(true),
+            ErrorCode::ARGON2_OK => Ok(true),
             err => Err(err)
         }
     }
