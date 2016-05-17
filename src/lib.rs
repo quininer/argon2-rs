@@ -3,6 +3,7 @@ extern crate libc;
 mod ffi;
 
 use std::fmt;
+use std::error::Error;
 use std::ffi::{ CString, CStr };
 use std::mem::{ transmute, transmute_copy };
 
@@ -130,15 +131,21 @@ pub fn verify<E: AsRef<str>, S: AsRef<[u8]>>(encoded: E, pwd: S) -> Result<bool,
     }
 }
 
-fn error_message(err: ErrorCode) -> Option<String> {
+fn error_message(err: &ErrorCode) -> Option<&str> {
     unsafe {
-        CStr::from_ptr(ffi::argon2_error_message(err as libc::c_int))
-            .to_str().map(|r| r.into()).ok()
+        CStr::from_ptr(ffi::argon2_error_message(*err as libc::c_int))
+            .to_str().ok()
     }
 }
 
 impl fmt::Display for ErrorCode {
     fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", error_message(*self).unwrap_or(String::from("Unknown")))
+        write!(f, "{}", self.description())
+    }
+}
+
+impl Error for ErrorCode {
+    fn description(&self) -> &str {
+        error_message(self).unwrap_or("Unknown")
     }
 }
