@@ -30,12 +30,12 @@ pub struct Argon2 {
 }
 
 impl Argon2 {
-    pub fn new<S: AsRef<[u8]>>(salt: S, t_const: usize, m_const: usize) -> Argon2 {
+    pub fn new<S: Into<Vec<u8>>>(salt: S, t_const: usize, m_const: usize) -> Argon2 {
         Argon2 {
             t_const: t_const,
             m_const: m_const,
             parallelism: 1,
-            salt: salt.as_ref().into(),
+            salt: salt.into(),
             ty: Type::i,
             out_len: OUT_LEN,
             salt_len: SALT_LEN,
@@ -120,7 +120,7 @@ pub fn verify<E: AsRef<str>, S: AsRef<[u8]>>(encoded: E, pwd: S) -> Result<bool,
 
     unsafe {
         match transmute(ffi::argon2_verify(
-            CString::from_vec_unchecked(encoded.bytes().collect()).as_ptr(),
+            CString::from_vec_unchecked(encoded.into()).as_ptr(),
             transmute_copy(&pwd),
             pwd.len(),
             if encoded.starts_with("$argon2i$") { Type::i } else { Type::d }
@@ -128,13 +128,6 @@ pub fn verify<E: AsRef<str>, S: AsRef<[u8]>>(encoded: E, pwd: S) -> Result<bool,
             ErrorCode::OK => Ok(true),
             err => Err(err)
         }
-    }
-}
-
-fn error_message(err: &ErrorCode) -> Option<&str> {
-    unsafe {
-        CStr::from_ptr(ffi::argon2_error_message(*err as libc::c_int))
-            .to_str().ok()
     }
 }
 
@@ -146,6 +139,9 @@ impl fmt::Display for ErrorCode {
 
 impl Error for ErrorCode {
     fn description(&self) -> &str {
-        error_message(self).unwrap_or("Unknown")
+        unsafe {
+            CStr::from_ptr(ffi::argon2_error_message(*self as libc::c_int))
+                .to_str().unwrap_or("Unknown")
+        }
     }
 }
