@@ -2,7 +2,7 @@
 name = "argon2"
 version = "0.2.2"
 authors = ["quininer <quininer@live.com>"]
-build = "build.rs"
+# build = "build.rs"
 
 [dependencies]
 libc = "0.2"
